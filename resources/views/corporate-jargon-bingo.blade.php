@@ -36,6 +36,14 @@
         max-height: none !important;
         overflow: visible !important;
     }
+
+    /* Flex layout ancestors can clip tall print content; keep full card visible */
+    body:has(#jargon-bingo-root) main,
+    body:has(#jargon-bingo-root) main > .grid {
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
     /* Strip interactive chrome; display:none removes them from the print box */
     #jargon-bingo-root .jb-no-print {
         display: none !important;
@@ -50,6 +58,7 @@
      * vertically in print — only ~3 rows show. Force visible on the wrapper.
      */
     .jb-grid-outer {
+        display: block !important;
         overflow: visible !important;
         max-height: none !important;
     }
@@ -68,8 +77,9 @@
         overflow: visible !important;
         grid-template-rows: auto repeat(5, auto) !important;
         align-content: start !important;
-        page-break-inside: avoid;
-        break-inside: avoid;
+        /* avoid page-break-inside: avoid — Chrome often clips the last row when the block is taller than the page */
+        page-break-inside: auto;
+        break-inside: auto;
     }
 
     #jargon-bingo-grid [role="columnheader"] {
@@ -82,9 +92,9 @@
         border: 1px solid #9ca3af !important;
         border-radius: 0 !important;
         min-height: 0 !important;
-        padding: 6px 4px !important;
-        font-size: 9px !important;
-        line-height: 1.2 !important;
+        padding: 4px 3px !important;
+        font-size: 8px !important;
+        line-height: 1.15 !important;
         background: white !important;
         color: #1f2937 !important;
         box-shadow: none !important;
@@ -158,7 +168,7 @@
         </button>
         <button
             type="button"
-            @click="window.print()"
+            @click="openPrintDialog()"
             class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
         >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -352,15 +362,20 @@ function corporateJargonBingo() {
         copied: false,
         /** @type {{ el: Element, display: string, priority: string }[]} */
         _printHidden: [],
+        _printChromeStripped: false,
 
         /**
          * Hide layout + page siblings so print uses normal flow (no viewport clipping).
          */
         stripPrintChrome() {
+            if (this._printChromeStripped) {
+                return;
+            }
             const root = document.getElementById('jargon-bingo-root');
             if (!root) {
                 return;
             }
+            this._printChromeStripped = true;
             this._printHidden = [];
             const seen = new Set();
             const hide = (el) => {
@@ -392,6 +407,7 @@ function corporateJargonBingo() {
 
         restorePrintChrome() {
             if (!this._printHidden || this._printHidden.length === 0) {
+                this._printChromeStripped = false;
                 return;
             }
             for (let i = this._printHidden.length - 1; i >= 0; i--) {
@@ -403,6 +419,13 @@ function corporateJargonBingo() {
                 }
             }
             this._printHidden = [];
+            this._printChromeStripped = false;
+        },
+
+        /** Ensures chrome is stripped before the dialog; beforeprint also runs but may be late in some browsers. */
+        openPrintDialog() {
+            this.stripPrintChrome();
+            window.requestAnimationFrame(() => window.print());
         },
 
         init() {
