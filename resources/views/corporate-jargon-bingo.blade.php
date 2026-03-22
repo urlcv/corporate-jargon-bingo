@@ -8,21 +8,33 @@
 .jb-print-only { display: none; }
 
 @media print {
-    /* Hide everything on the page */
-    body > *:not(#jargon-bingo-root),
-    header, nav, footer,
-    .jb-no-print {
-        display: none !important;
+    /*
+     * #jargon-bingo-root lives inside <main>, not as body’s direct child — we cannot use
+     * body > *:not(#jargon-bingo-root) or we hide the wrapper and print nothing.
+     * Standard pattern: hide all descendants with visibility, then show only the tool.
+     */
+    body * {
+        visibility: hidden;
     }
-
-    /* Ensure the Alpine root and its ancestors are visible */
+    #jargon-bingo-root,
+    #jargon-bingo-root * {
+        visibility: visible;
+    }
     #jargon-bingo-root {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 100%;
         display: block !important;
         margin: 0 !important;
         padding: 0 !important;
     }
+    /* Strip interactive chrome; display:none removes them from the print box */
+    #jargon-bingo-root .jb-no-print {
+        display: none !important;
+    }
 
-    /* Show print-only elements */
     .jb-print-only {
         display: block !important;
     }
