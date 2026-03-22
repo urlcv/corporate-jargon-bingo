@@ -180,33 +180,39 @@
             <h2 class="text-center text-lg font-bold text-gray-900">Corporate Jargon Bingo</h2>
             <p class="text-center text-xs text-gray-500">Tick each square when you hear or read it. Centre = FREE.</p>
             <p x-show="seed" class="text-center text-xs text-gray-400">Seed: <span x-text="seed" class="font-mono"></span></p>
-            <div class="w-[300px] border-2 border-gray-800 bg-white" style="display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: auto repeat(5, 1fr); aspect-ratio: 1; print-color-adjust: exact; -webkit-print-color-adjust: exact;">
-                <div class="flex items-center justify-center py-1 text-sm font-bold border-b-2 border-r border-gray-800">B</div>
-                <div class="flex items-center justify-center py-1 text-sm font-bold border-b-2 border-r border-gray-800">I</div>
-                <div class="flex items-center justify-center py-1 text-sm font-bold border-b-2 border-r border-gray-800">N</div>
-                <div class="flex items-center justify-center py-1 text-sm font-bold border-b-2 border-r border-gray-800">G</div>
-                <div class="flex items-center justify-center py-1 text-sm font-bold border-b-2 border-gray-800">O</div>
-                <template x-for="(row, i) in grid" :key="'p-' + i">
-                    <template x-for="(cell, j) in row" :key="'p-' + i + '-' + j">
-                        <div
-                            :class="[
-                                'flex items-center justify-center p-1 text-center text-[8px] leading-tight font-medium',
-                                j < 4 ? 'border-r border-gray-400' : '',
-                                i < 4 ? 'border-b border-gray-400' : '',
-                                cell.free ? 'bg-gray-100 font-bold text-gray-700' : 'bg-white text-gray-800',
-                                cell.ticked && !cell.free ? 'bg-gray-200' : ''
-                            ]"
-                        >
-                            <span class="flex items-center gap-0.5">
-                                <template x-if="cell.ticked && !cell.free">
-                                    <span class="text-gray-700">✓</span>
-                                </template>
-                                <span x-text="cell.free ? '★ FREE' : cell.label"></span>
-                            </span>
-                        </div>
+            <table class="w-[320px] border-collapse border-2 border-gray-800 bg-white" style="print-color-adjust: exact; -webkit-print-color-adjust: exact; table-layout: fixed;">
+                <thead>
+                    <tr>
+                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">B</th>
+                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">I</th>
+                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">N</th>
+                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">G</th>
+                        <th class="py-1 text-sm font-bold text-center border-b-2 border-gray-800 w-1/5">O</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(row, i) in grid" :key="'p-' + i">
+                        <tr>
+                            <template x-for="(cell, j) in row" :key="'p-' + i + '-' + j">
+                                <td
+                                    :class="[
+                                        'p-1.5 text-center text-[9px] leading-tight font-medium align-middle',
+                                        j < 4 ? 'border-r border-gray-400' : '',
+                                        i < 4 ? 'border-b border-gray-400' : '',
+                                        cell.free ? 'bg-gray-100 font-bold text-gray-700' : 'bg-white text-gray-800',
+                                        cell.ticked && !cell.free ? 'bg-gray-200' : ''
+                                    ]"
+                                >
+                                    <template x-if="cell.ticked && !cell.free">
+                                        <span class="text-gray-700">✓ </span>
+                                    </template>
+                                    <span x-text="cell.free ? '★ FREE' : cell.label"></span>
+                                </td>
+                            </template>
+                        </tr>
                     </template>
-                </template>
-            </div>
+                </tbody>
+            </table>
             <p class="text-center text-[10px] text-gray-400 mt-2">urlcv.com/tools/corporate-jargon-bingo</p>
         </div>
     </div>
