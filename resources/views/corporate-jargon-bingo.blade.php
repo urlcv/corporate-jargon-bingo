@@ -5,21 +5,67 @@
 --}}
 @push('head')
 <style>
+.jb-print-only { display: none; }
+
 @media print {
-    body * { visibility: hidden; }
-    #jargon-bingo-print,
-    #jargon-bingo-print * { visibility: visible; }
-    #jargon-bingo-print {
-        display: block !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 0;
-        margin: 0;
-        background: white;
-        box-shadow: none;
+    /* Hide everything on the page */
+    body > *:not(#jargon-bingo-root),
+    header, nav, footer,
+    .jb-no-print {
+        display: none !important;
     }
+
+    /* Ensure the Alpine root and its ancestors are visible */
+    #jargon-bingo-root {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Show print-only elements */
+    .jb-print-only {
+        display: block !important;
+    }
+
+    /* Clean up the grid for print */
+    #jargon-bingo-grid {
+        max-width: 380px !important;
+        margin: 0 auto !important;
+        border: 2px solid #1f2937 !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        background: white !important;
+    }
+
+    #jargon-bingo-grid [role="columnheader"] {
+        border-bottom: 2px solid #1f2937;
+        font-size: 13px;
+        padding: 4px 0;
+    }
+
+    #jargon-bingo-grid [role="gridcell"] {
+        border: 1px solid #9ca3af !important;
+        border-radius: 0 !important;
+        min-height: 0 !important;
+        padding: 6px 4px !important;
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+        background: white !important;
+        color: #1f2937 !important;
+        box-shadow: none !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    #jargon-bingo-grid [role="gridcell"][aria-pressed="true"] {
+        background: #e5e7eb !important;
+    }
+
+    #jargon-bingo-grid .jb-free-cell {
+        background: #f3f4f6 !important;
+    }
+
     @page {
         size: auto;
         margin: 15mm;
@@ -32,14 +78,16 @@
     x-data="corporateJargonBingo()"
     x-init="init()"
     x-cloak
+    id="jargon-bingo-root"
     class="space-y-6"
 >
-    <p class="text-sm text-gray-600">
+    {{-- Screen-only intro --}}
+    <p class="text-sm text-gray-600 jb-no-print">
         Tick each square when you hear or read the phrase in a meeting, email, or strategy doc. Get a line or full house to win.
     </p>
 
-    {{-- Tone selector --}}
-    <div class="flex flex-wrap items-center gap-2">
+    {{-- Tone selector (screen only) --}}
+    <div class="flex flex-wrap items-center gap-2 jb-no-print">
         <span class="text-sm font-medium text-gray-700">Tone:</span>
         <template x-for="opt in ['mild', 'mixed', 'spicy']" :key="opt">
             <button
@@ -56,8 +104,8 @@
         </template>
     </div>
 
-    {{-- Actions --}}
-    <div class="flex flex-wrap items-center gap-3">
+    {{-- Actions (screen only) --}}
+    <div class="flex flex-wrap items-center gap-3 jb-no-print">
         <button
             type="button"
             @click="shuffleCard()"
@@ -94,14 +142,29 @@
         </button>
     </div>
 
-    {{-- Seed display --}}
-    <div x-show="seed" class="text-xs text-gray-400">
+    {{-- Seed display (screen only) --}}
+    <div x-show="seed" class="text-xs text-gray-400 jb-no-print">
         Seed: <span x-text="seed" class="font-mono"></span>
     </div>
 
-    {{-- Bingo grid 5×5 (on-screen) --}}
+    {{-- Print-only header: URLCV branding + title --}}
+    <div class="jb-print-only text-center space-y-2 mb-4" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 36" style="height: 28px; width: auto; margin: 0 auto;">
+            <rect x="2" y="4" width="24" height="24" rx="6" fill="#0EA5E9"/>
+            <rect x="8" y="10" width="13" height="3" rx="1" fill="#ffffff" opacity="0.95"/>
+            <rect x="8" y="15" width="9" height="3" rx="1" fill="#ffffff" opacity="0.95"/>
+            <rect x="8" y="20" width="11" height="3" rx="1" fill="#ffffff" opacity="0.95"/>
+            <text x="36" y="24" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="700" fill="#0F172A" letter-spacing="-0.25">urlcv</text>
+        </svg>
+        <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0;">Corporate Jargon Bingo</h2>
+        <p style="font-size: 11px; color: #6b7280; margin: 0;">Tick each square when you hear or read it. Centre = FREE.</p>
+        <p x-show="seed" style="font-size: 10px; color: #9ca3af; margin: 0;">Seed: <span x-text="seed"></span></p>
+    </div>
+
+    {{-- Bingo grid 5×5 — used for BOTH screen and print --}}
     <div class="overflow-x-auto flex justify-center">
         <div
+            id="jargon-bingo-grid"
             class="w-full max-w-lg border-2 border-gray-300 rounded-lg p-2 sm:p-3 bg-white"
             style="display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: auto repeat(5, 1fr); gap: 6px;"
             role="grid"
@@ -125,7 +188,7 @@
                         :class="[
                             'flex items-center justify-center p-1.5 sm:p-2 text-center text-[10px] sm:text-xs font-medium rounded border-2 transition-colors min-h-[3rem] sm:min-h-[3.5rem] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
                             cell.free
-                                ? 'bg-amber-50 border-amber-400 text-amber-800 font-bold cursor-default'
+                                ? 'bg-amber-50 border-amber-400 text-amber-800 font-bold cursor-default jb-free-cell'
                                 : cell.ticked
                                     ? 'bg-primary-100 border-primary-500 text-primary-800'
                                     : 'bg-white border-gray-300 text-gray-800 hover:border-gray-400 hover:bg-gray-50 cursor-pointer'
@@ -145,8 +208,11 @@
         </div>
     </div>
 
-    {{-- Progress panel --}}
-    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+    {{-- Print-only footer --}}
+    <p class="jb-print-only text-center" style="font-size: 10px; color: #9ca3af; margin-top: 12px;">urlcv.com/tools/corporate-jargon-bingo</p>
+
+    {{-- Progress panel (screen only) --}}
+    <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3 jb-no-print">
         <div class="flex flex-wrap items-center gap-4 text-sm">
             <span class="text-gray-600">
                 Marked: <span class="font-semibold text-gray-900" x-text="tickCount"></span> / 24
@@ -165,65 +231,13 @@
         </div>
     </div>
 
-    {{-- Printable branded card (hidden on screen, shown in print) --}}
-    <div id="jargon-bingo-print" class="hidden w-full max-w-lg mx-auto" aria-hidden="true">
-        <div class="p-6 space-y-4 flex flex-col items-center">
-            <div class="flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 36" class="h-8 w-auto">
-                    <rect x="2" y="4" width="24" height="24" rx="6" fill="#0EA5E9"/>
-                    <rect x="8" y="10" width="13" height="3" rx="1" fill="#ffffff" opacity="0.95"/>
-                    <rect x="8" y="15" width="9" height="3" rx="1" fill="#ffffff" opacity="0.95"/>
-                    <rect x="8" y="20" width="11" height="3" rx="1" fill="#ffffff" opacity="0.95"/>
-                    <text x="36" y="24" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="700" fill="#0F172A" letter-spacing="-0.25">urlcv</text>
-                </svg>
-            </div>
-            <h2 class="text-center text-lg font-bold text-gray-900">Corporate Jargon Bingo</h2>
-            <p class="text-center text-xs text-gray-500">Tick each square when you hear or read it. Centre = FREE.</p>
-            <p x-show="seed" class="text-center text-xs text-gray-400">Seed: <span x-text="seed" class="font-mono"></span></p>
-            <table class="w-[320px] border-collapse border-2 border-gray-800 bg-white" style="print-color-adjust: exact; -webkit-print-color-adjust: exact; table-layout: fixed;">
-                <thead>
-                    <tr>
-                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">B</th>
-                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">I</th>
-                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">N</th>
-                        <th class="py-1 text-sm font-bold text-center border-b-2 border-r border-gray-800 w-1/5">G</th>
-                        <th class="py-1 text-sm font-bold text-center border-b-2 border-gray-800 w-1/5">O</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="(row, i) in grid" :key="'p-' + i">
-                        <tr>
-                            <template x-for="(cell, j) in row" :key="'p-' + i + '-' + j">
-                                <td
-                                    :class="[
-                                        'p-1.5 text-center text-[9px] leading-tight font-medium align-middle',
-                                        j < 4 ? 'border-r border-gray-400' : '',
-                                        i < 4 ? 'border-b border-gray-400' : '',
-                                        cell.free ? 'bg-gray-100 font-bold text-gray-700' : 'bg-white text-gray-800',
-                                        cell.ticked && !cell.free ? 'bg-gray-200' : ''
-                                    ]"
-                                >
-                                    <template x-if="cell.ticked && !cell.free">
-                                        <span class="text-gray-700">✓ </span>
-                                    </template>
-                                    <span x-text="cell.free ? '★ FREE' : cell.label"></span>
-                                </td>
-                            </template>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-            <p class="text-center text-[10px] text-gray-400 mt-2">urlcv.com/tools/corporate-jargon-bingo</p>
-        </div>
-    </div>
-
-    {{-- Disclaimer --}}
-    <p class="text-xs text-gray-400 italic">
+    {{-- Disclaimer (screen only) --}}
+    <p class="text-xs text-gray-400 italic jb-no-print">
         Just for fun — not targeting any individual, employer, or organisation.
     </p>
 
-    {{-- Tip --}}
-    <div class="rounded-xl p-4 text-sm bg-blue-50 border border-blue-200 text-blue-800">
+    {{-- Tip (screen only) --}}
+    <div class="rounded-xl p-4 text-sm bg-blue-50 border border-blue-200 text-blue-800 jb-no-print">
         <span class="font-semibold">Tip:</span> Use <strong>Print card</strong> to save a clean PDF before your next meeting. Share a specific card layout by copying the page URL — the <code class="text-xs bg-blue-100 px-1 rounded">?seed=</code> parameter reproduces the exact same card. Switch between <strong>Mild</strong>, <strong>Mixed</strong>, and <strong>Spicy</strong> tones for different levels of corporate cringe.
     </div>
 </div>
