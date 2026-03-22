@@ -20,6 +20,10 @@
     #jargon-bingo-root * {
         visibility: visible;
     }
+    html, body {
+        height: auto !important;
+        overflow: visible !important;
+    }
     #jargon-bingo-root {
         position: absolute;
         left: 0;
@@ -29,6 +33,9 @@
         display: block !important;
         margin: 0 !important;
         padding: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
     }
     /* Strip interactive chrome; display:none removes them from the print box */
     #jargon-bingo-root .jb-no-print {
@@ -39,7 +46,16 @@
         display: block !important;
     }
 
-    /* Clean up the grid for print */
+    /*
+     * overflow-x-auto makes overflow-y compute to auto (CSS), which clips the grid
+     * vertically in print — only ~3 rows show. Force visible on the wrapper.
+     */
+    .jb-grid-outer {
+        overflow: visible !important;
+        max-height: none !important;
+    }
+
+    /* Clean up the grid for print — use auto rows, not 1fr (avoids squashing/clipping) */
     #jargon-bingo-grid {
         max-width: 380px !important;
         margin: 0 auto !important;
@@ -48,6 +64,11 @@
         padding: 0 !important;
         gap: 0 !important;
         background: white !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        grid-template-rows: auto repeat(5, auto) !important;
+        align-content: start !important;
     }
 
     #jargon-bingo-grid [role="columnheader"] {
@@ -174,7 +195,7 @@
     </div>
 
     {{-- Bingo grid 5×5 — used for BOTH screen and print --}}
-    <div class="overflow-x-auto flex justify-center">
+    <div class="jb-grid-outer overflow-x-auto flex justify-center">
         <div
             id="jargon-bingo-grid"
             class="w-full max-w-lg border-2 border-gray-300 rounded-lg p-2 sm:p-3 bg-white"
