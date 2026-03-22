@@ -7,29 +7,28 @@
 <style>
 .jb-print-only { display: none; }
 
+/* Screen grid — avoid inline styles so print rules always win */
+.jb-bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: auto repeat(5, minmax(2.75rem, auto));
+    gap: 6px;
+}
+
 @media print {
     /*
-     * #jargon-bingo-root lives inside <main>, not as body’s direct child — we cannot use
-     * body > *:not(#jargon-bingo-root) or we hide the wrapper and print nothing.
-     * Standard pattern: hide all descendants with visibility, then show only the tool.
+     * Do NOT use position:absolute + visibility on body* — Chrome clips the card to
+     * ~one viewport height so the last grid row disappears. Instead, beforeprint JS
+     * hides sibling chrome; the card stays in normal flow and prints in full.
      */
-    body * {
-        visibility: hidden;
-    }
-    #jargon-bingo-root,
-    #jargon-bingo-root * {
-        visibility: visible;
-    }
     html, body {
         height: auto !important;
         overflow: visible !important;
     }
     #jargon-bingo-root {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 100%;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
         display: block !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -55,8 +54,8 @@
         max-height: none !important;
     }
 
-    /* Clean up the grid for print — use auto rows, not 1fr (avoids squashing/clipping) */
-    #jargon-bingo-grid {
+    /* Clean up the grid for print — auto rows, keep whole card on one page when possible */
+    #jargon-bingo-grid.jb-bingo-grid {
         max-width: 380px !important;
         margin: 0 auto !important;
         border: 2px solid #1f2937 !important;
@@ -69,6 +68,8 @@
         overflow: visible !important;
         grid-template-rows: auto repeat(5, auto) !important;
         align-content: start !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
     }
 
     #jargon-bingo-grid [role="columnheader"] {
@@ -113,6 +114,8 @@
     x-cloak
     id="jargon-bingo-root"
     class="space-y-6"
+    @beforeprint.window="stripPrintChrome()"
+    @afterprint.window="restorePrintChrome()"
 >
     {{-- Screen-only intro --}}
     <p class="text-sm text-gray-600 jb-no-print">
@@ -198,8 +201,7 @@
     <div class="jb-grid-outer overflow-x-auto flex justify-center">
         <div
             id="jargon-bingo-grid"
-            class="w-full max-w-lg border-2 border-gray-300 rounded-lg p-2 sm:p-3 bg-white"
-            style="display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: auto repeat(5, 1fr); gap: 6px;"
+            class="jb-bingo-grid w-full max-w-lg border-2 border-gray-300 rounded-lg p-2 sm:p-3 bg-white"
             role="grid"
             aria-label="Corporate Jargon Bingo card"
         >
@@ -348,6 +350,60 @@ function corporateJargonBingo() {
         tone: 'mixed',
         seed: '',
         copied: false,
+        /** @type {{ el: Element, display: string, priority: string }[]} */
+        _printHidden: [],
+
+        /**
+         * Hide layout + page siblings so print uses normal flow (no viewport clipping).
+         */
+        stripPrintChrome() {
+            const root = document.getElementById('jargon-bingo-root');
+            if (!root) {
+                return;
+            }
+            this._printHidden = [];
+            const seen = new Set();
+            const hide = (el) => {
+                if (!el || seen.has(el)) {
+                    return;
+                }
+                seen.add(el);
+                this._printHidden.push({
+                    el,
+                    display: el.style.getPropertyValue('display'),
+                    priority: el.style.getPropertyPriority('display'),
+                });
+                el.style.setProperty('display', 'none', 'important');
+            };
+
+            document.querySelectorAll('body > header, body > footer').forEach(hide);
+            document.querySelectorAll('body > div.max-w-screen-xl aside').forEach(hide);
+
+            let el = root.parentElement;
+            while (el && el !== document.body) {
+                Array.from(el.children).forEach((child) => {
+                    if (child !== root && !child.contains(root)) {
+                        hide(child);
+                    }
+                });
+                el = el.parentElement;
+            }
+        },
+
+        restorePrintChrome() {
+            if (!this._printHidden || this._printHidden.length === 0) {
+                return;
+            }
+            for (let i = this._printHidden.length - 1; i >= 0; i--) {
+                const { el, display, priority } = this._printHidden[i];
+                if (display) {
+                    el.style.setProperty('display', display, priority || undefined);
+                } else {
+                    el.style.removeProperty('display');
+                }
+            }
+            this._printHidden = [];
+        },
 
         init() {
             const params = new URLSearchParams(window.location.search);
